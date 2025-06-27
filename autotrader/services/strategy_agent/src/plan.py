@@ -14,8 +14,8 @@ producer=KafkaProducer(bootstrap_servers=[os.getenv("KAFKA_BOOTSTRAP","localhost
 FUNCTION_SPEC={"name":"propose_trades","parameters":PlanPayload.schema()}
 SYS=f"You are an autonomous derivatives trader. Output JSON only, obey risk limits. Leverage ≤{settings.risk.max_leverage}."
 
-async def plan(summary):
-    user={"summary":summary,"rag":rag_query('crypto market',3)}
+async def plan(summary, metrics):
+    user={"summary":summary,"metrics":metrics,"rag":rag_query('crypto market',3)}
     r=await openai.ChatCompletion.acreate(
         model=settings.gpt_small_model,
         temperature=0.15,
@@ -27,7 +27,7 @@ async def plan(summary):
 
 async def loop():
     for msg in consumer:
-        p=await plan(msg.value["summary"])
+        p=await plan(msg.value["summary"], msg.value.get("metrics",{}))
         producer.send("strategy.plan",{"ts":int(time.time()),**p})
 
 asyncio.run(loop())

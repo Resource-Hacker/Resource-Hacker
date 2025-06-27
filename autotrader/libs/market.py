@@ -1,4 +1,4 @@
-import httpx, asyncio, functools
+import httpx, asyncio
 from typing import Dict, List, Tuple
 
 BINANCE_SPOT_TICKER_URL="https://api.binance.com/api/v3/ticker/24hr"
