@@ -1,5 +1,6 @@
 import asyncio, json, os, time, httpx
 from kafka import KafkaProducer
+from libs.market import market_snapshot
 
 BOOTSTRAP=os.getenv("KAFKA_BOOTSTRAP","localhost:9092")
 producer=KafkaProducer(bootstrap_servers=[BOOTSTRAP],value_serializer=lambda v: json.dumps(v).encode())
@@ -14,7 +15,9 @@ async def get_news():
 async def loop():
     while True:
         headlines=await get_news()
-        producer.send("market.raw",{"ts":int(time.time()),"news":headlines})
+        metrics = await market_snapshot(["BTCUSDT","ETHUSDT","SOLUSDT"])
+        payload={"ts":int(time.time()),"news":headlines,"metrics":metrics}
+        producer.send("market.raw",payload)
         await asyncio.sleep(60)
 
 asyncio.run(loop())
